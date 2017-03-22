@@ -2,7 +2,7 @@
   "name": "reactive-replica",
   "version": "1.0.0",
   "description": "Helps structure logic around model changes, i.e. utilize reactive style.",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "test": "mocha ./test --compilers js:babel-register",
     "build": "babel ./index.js -d ./dist"
