@@ -726,6 +726,44 @@ describe( 'replica', function()
         
         done()
     } )
+    
+    it ( 'Resolve', function( done )
+    {
+        let root = new Place
+        
+        root.replicate( {
+            path : {
+                to : {
+                    first : 1,
+                    second : 2
+                }
+            }
+        } )
+        
+        let first = root.resolve( 'path.to.first' )
+        let second = root.resolve( 'path.to.second' )
+        
+        let firstCalled = 0
+        first.listen( {
+            create : function( created ) {
+                expect( created ).equal( 1 )
+                ++ firstCalled
+            }
+        } )
+        
+        let secondCalled = 0
+        second.listen( {
+            create : function( created ) {
+                expect( created ).equal( 2 )
+                ++ secondCalled
+            }
+        } )
+        
+        expect( firstCalled ).equal( 1 )
+        expect( secondCalled ).equal( 1 )
+        
+        done()
+    } )
 } )
 
 

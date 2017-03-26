@@ -46,7 +46,7 @@ export default class Place
             const placeName = actualPath[ i ]
             
             //looking for specified place:
-            var specified
+            let specified = undefined
             for ( let candidate of this.children )
             {
                 if ( candidate.name === placeName )
