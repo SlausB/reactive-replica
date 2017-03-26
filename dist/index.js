@@ -59,7 +59,7 @@ var Place = function () {
                 var placeName = actualPath[i];
 
                 //looking for specified place:
-                var specified;
+                var specified = undefined;
                 var _iteratorNormalCompletion = true;
                 var _didIteratorError = false;
                 var _iteratorError = undefined;
