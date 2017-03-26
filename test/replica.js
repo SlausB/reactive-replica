@@ -692,6 +692,40 @@ describe( 'replica', function()
         
         done()
     } )
+    
+    it ( 'Data must be replicated on append even through intermediate automatically created children', function( done )
+    {
+        let root = new Place
+        
+        root.replicate( {
+            path : {
+                to : {
+                    place : {
+                        value : 1
+                    }
+                }
+            }
+        } )
+        
+        let place = new Place( 'place' )
+        root.append( place, 'path.to' )
+        
+        let createCalled = 0
+        place.listen(
+            {
+                create : function( created )
+                {
+                    expect( created ).equal( 1 )
+                    ++ createCalled
+                }
+            },
+            'value'
+        )
+        
+        expect( createCalled ).equal( 1 )
+        
+        done()
+    } )
 } )
 
 

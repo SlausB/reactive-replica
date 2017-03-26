@@ -60,11 +60,31 @@ var Place = function () {
 
                 //looking for specified place:
                 var specified;
-                for (var placeIndex in this.children) {
-                    var candidate = this.children[placeIndex];
-                    if (candidate.name === placeName) {
-                        specified = candidate;
-                        break;
+                var _iteratorNormalCompletion = true;
+                var _didIteratorError = false;
+                var _iteratorError = undefined;
+
+                try {
+                    for (var _iterator = this.children[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                        var candidate = _step.value;
+
+                        if (candidate.name === placeName) {
+                            specified = candidate;
+                            break;
+                        }
+                    }
+                } catch (err) {
+                    _didIteratorError = true;
+                    _iteratorError = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion && _iterator.return) {
+                            _iterator.return();
+                        }
+                    } finally {
+                        if (_didIteratorError) {
+                            throw _iteratorError;
+                        }
                     }
                 }
 
@@ -76,7 +96,9 @@ var Place = function () {
                         var parent = place;
                         place = new Place(placeName);
                         parent.children.push(place);
-                        //appended place isn't user defined so no point calling handleAppend() and/or define ...
+
+                        //appended place isn't user defined so no point replicating it just pass already any existing value:
+                        place.replica = parent.replica === undefined ? undefined : parent.replica[place.name];
                     }
             }
             return place;
@@ -170,7 +192,8 @@ function postpone(place, command) {
 function append(place, appending, path) {
     place = place.resolve(path);
     place.children.push(appending);
-    handleAppend(place, appending);
+
+    appending.replicate(place.replica === undefined ? undefined : place.replica[appending.name]);
 }
 
 function remove(place, removing, path) {
@@ -290,33 +313,6 @@ function handlePostpones(place) {
         }
     }
     place.postponedCommands.length = 0;
-}
-
-/** Recursively check for possible CREATE since data may already exist.*/
-function handleAppend(place, appended) {
-    //REMOVE is handled when listener was added to appending place:
-    /*//we cannot use just appended.replicate( place.replica ) here because it doesn't treat data absence as REMOVE and vice versa ...
-    
-    const replica = place.replica === undefined ? undefined : place.replica[ appended.name ]
-    if ( replica === undefined )
-    {
-        onRemove(
-            appended,
-            place.removedReplica === undefined ? undefined : place.removedReplica[ appended.name ]
-        )
-    }
-    else
-    {
-        onCreate( appended, replica )
-    }
-    appended.replica = replica
-    
-    for ( var i in appended.children )
-    {
-        var child = appended.children[ i ]
-        handleAppend( appended, child )
-    }*/
-    appended.replicate(place.replica === undefined ? undefined : place.replica[appended.name]);
 }
 
 function onCreate(place, created) {
