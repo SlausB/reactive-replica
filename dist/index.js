@@ -170,7 +170,6 @@ function postpone(place, command) {
 function append(place, appending, path) {
     place = place.resolve(path);
     place.children.push(appending);
-    appending.parent = place;
     handleAppend(place, appending);
 }
 
