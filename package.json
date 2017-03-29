@@ -1,6 +1,6 @@
 {
   "name": "reactive-replica",
-  "version": "1.0.5",
+  "version": "1.1.0",
   "description": "Helps structure logic around model changes, i.e. utilize reactive style.",
   "main": "dist/index.js",
   "scripts": {
