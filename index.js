@@ -211,22 +211,15 @@ function listen(
     place = place.resolve( path )
     place.listeners.push( listener )
     
-    //handle already existing replica:
-    if ( isFunction( listener.create ) )
-    {
-        if ( place.replica !== undefined )
-        {
-            listener.create( place.replica )
-        }
-    }
-    
     //... and for absent replica as well since application supposed to replicate the present model's shape:
-    if ( isFunction( listener.remove ) )
+    if ( place.replica === undefined )
     {
-        if ( place.replica === undefined )
-        {
-            listener.remove( place.removedReplica )
-        }
+        issueRemove( listener, place, place.removedReplica )
+    }
+    //handle already existing replica:
+    else
+    {
+        issueCreate( listener, place, place.replica )
     }
 }
 
@@ -258,47 +251,44 @@ function replicate(
     {
         if ( place.replica !== undefined )
         {
-            onRemove( place, place.replica )
+            place.removedReplica = place.replica
+            delete place.replica
+            onRemove( place, place.removedReplica )
             
             for ( var i = 0; i < place.children.length; ++ i )
             {
                 var child = place.children[ i ]
                 child.replicate( undefined )
             }
-            
-            place.removedReplica = place.replica
-            
-            delete place.replica
         }
     }
     //handle CREATE/CHANGE:
     else
     {
-        if ( place.replica === undefined )
+        let old = place.replica
+        place.replica = value
+        
+        if ( old === undefined )
         {
             onCreate( place, value )
         }
         //equality determination policy for objects wasn't established yet, but let's put responsibility to handle object's changes to nested Places:
         //be careful with null values (since those are 'object's) - don't let them sneak into model and/or server-side:
-        else if ( typeof value !== 'object' || typeof place.replica !== 'object' )
+        else if ( typeof value !== 'object' || typeof old !== 'object' )
         {
-            if ( value !== place.replica )
+            if ( value !== old )
             {
-                onChange( place, place.replica, value )
+                onChange( place, value, old )
             }
         }
         //otherwise both are objects - won't change ...
         
         //we don't care about model's fields which has no attached Places against them:
-        for ( var i = 0; i < place.children.length; ++ i )
+        for ( let child of place.children )
         {
-            var child = place.children[ i ]
-            
             //I suppose we shouldn't care if replicating value isn't of Object type since [] operator should just return undefined (is what we need) in that case:
             child.replicate( value[ child.name ] )
         }
-        
-        place.replica = value
     }
     
     place.busy = false
@@ -338,39 +328,60 @@ function handlePostpones( place )
     place.postponedCommands.length = 0
 }
 
+function issueCreate( listener, place, created )
+{
+    if ( listener.create === true )
+    {
+        if ( isFunction( listener.change ) )
+        {
+            listener.change( created, undefined, place )
+        }
+    }
+    else if ( isFunction( listener.create ) )
+    {
+        listener.create( created, place )
+    }
+}
+
 function onCreate( place, created )
 {
-    for ( var i in place.listeners )
+    for ( let listener of place.listeners )
     {
-        var listener = place.listeners[ i ]
-        if ( isFunction( listener.create ) )
+        issueCreate( listener, place, created )
+    }
+}
+
+function onChange( place, after, before )
+{
+    for ( let listener of place.listeners )
+    {
+        if ( listener.change === true )
         {
-            listener.create( created, place )
+            if ( isFunction( listener.create ) )
+            {
+                listener.create( after, place )
+            }
+        }
+        else if ( isFunction( listener.change ) )
+        {
+            listener.change( after, before, place )
         }
     }
 }
 
-function onChange( place, before, after )
+function issueRemove( listener, place, old )
 {
-    for ( var i in place.listeners )
+    if ( isFunction( listener.remove ) )
     {
-        var listener = place.listeners[ i ]
-        if ( isFunction( listener.change ) )
-        {
-            listener.change( before, after, place )
-        }
+        listener.remove( old, place )
     }
 }
 
 function onRemove( place, old )
 {
-    for ( var i in place.listeners )
+    for ( let listener of place.listeners )
     {
-        var listener = place.listeners[ i ]
-        if ( isFunction( listener.remove ) )
-        {
-            listener.remove( old, place )
-        }
+        issueRemove( listener, place, old )
     }
 }
 

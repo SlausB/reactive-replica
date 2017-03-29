@@ -221,11 +221,11 @@ describe( 'replica', function()
                 ++ createCalled
                 expect( created ).equal( 1 )
             },
-            change : function( before, after )
+            change : function( after, before )
             {
                 ++ changeCalled
-                expect( before ).equal( 1 )
                 expect( after ).equal( 2 )
+                expect( before ).equal( 1 )
             },
             remove : function( removed )
             {
@@ -330,10 +330,10 @@ describe( 'replica', function()
                 expect( created ).equal( 1 )
                 ++ firstCreated
             },
-            change : function( before, after )
+            change : function( after, before )
             {
-                expect( before ).equal( 1 )
                 expect( after ).equal( 2 )
+                expect( before ).equal( 1 )
                 ++ firstChanged
             }
         } )
@@ -345,10 +345,10 @@ describe( 'replica', function()
                 expect( created ).equal( 1 )
                 ++ secondCreated
             },
-            change : function( before, after )
+            change : function( after, before )
             {
-                expect( before ).equal( 1 )
                 expect( after ).equal( 2 )
+                expect( before ).equal( 1 )
                 ++ secondChanged
             }
         } )
@@ -377,23 +377,23 @@ describe( 'replica', function()
         let place = new Place( 'child' )
         let changed = 0
         place.listen( {
-            change : function( before, after )
+            change : function( after, before )
             {
                 switch ( changed )
                 {
                     case 0:
-                        expect( before ).equal( 0 )
                         expect( after ).equal( 1 )
+                        expect( before ).equal( 0 )
                         break
                     
                     case 1:
-                        expect( before ).equal( 1 )
                         expect( after ).equal( 2 )
+                        expect( before ).equal( 1 )
                         break
                     
                     case 2:
-                        expect( before ).equal( 2 )
                         expect( after ).equal( 3 )
+                        expect( before ).equal( 2 )
                         break
                 }
                 
@@ -529,10 +529,10 @@ describe( 'replica', function()
                 expect( created ).equal( 1 )
                 ++ createCalled
             },
-            change : function( before, after )
+            change : function( after, before )
             {
-                expect( before ).equal( 1 )
                 expect( after ).equal( 2 )
+                expect( before ).equal( 1 )
                 ++ changeCalled
             },
             remove : function( removed )
@@ -602,10 +602,10 @@ describe( 'replica', function()
                 expect( created, 'created' ).equal( 2 )
                 ++ createCalled
             },
-            change( before, after )
+            change( after, before )
             {
-                expect( before, 'before' ).equal( 2 )
                 expect( after, 'after' ).equal( 1 )
+                expect( before, 'before' ).equal( 2 )
                 ++ changeCalled
             }
         } )
@@ -631,7 +631,7 @@ describe( 'replica', function()
                 expect( created ).equal( 1 )
                 ++ createCalled
             },
-            change : function( before, after )
+            change : function( after, before )
             {
                 throw 'Must NOT be called'
             }
@@ -761,6 +761,65 @@ describe( 'replica', function()
         
         expect( firstCalled ).equal( 1 )
         expect( secondCalled ).equal( 1 )
+        
+        done()
+    } )
+    
+    it ( 'Create redirection', function( done )
+    {
+        let root = new Place
+        
+        root.replicate( {
+            create : 1
+        } )
+        
+        let changeCalled = 0
+        root.listen( {
+            create : true,
+            change : function( after, before )
+            {
+                expect( after, 'after' ).equal( 1 )
+                expect( before, 'before' ).equal( undefined )
+                ++ changeCalled
+            }
+        }, 'create' )
+        
+        expect( changeCalled, 'change called' ).equal( 1 )
+        
+        done()
+    } )
+    
+    it ( 'Change redirection', function( done )
+    {
+        let root = new Place
+        
+        root.replicate( {
+            change : 1
+        } )
+        
+        let createCalled = 0
+        root.listen( {
+            change : true,
+            create : function( created )
+            {
+                switch ( createCalled )
+                {
+                    case 0:
+                        expect( created ).equal( 1 )
+                        break
+                    case 1:
+                        expect( created ).equal( 2 )
+                        break
+                }
+                ++ createCalled
+            }
+        }, 'change' )
+        
+        root.replicate( {
+            change : 2
+        } )
+        
+        expect( createCalled ).equal( 2 )
         
         done()
     } )

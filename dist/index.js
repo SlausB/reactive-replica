@@ -213,19 +213,14 @@ function listen(place, listener, path) {
     place = place.resolve(path);
     place.listeners.push(listener);
 
-    //handle already existing replica:
-    if (isFunction(listener.create)) {
-        if (place.replica !== undefined) {
-            listener.create(place.replica);
-        }
-    }
-
     //... and for absent replica as well since application supposed to replicate the present model's shape:
-    if (isFunction(listener.remove)) {
-        if (place.replica === undefined) {
-            listener.remove(place.removedReplica);
-        }
+    if (place.replica === undefined) {
+        issueRemove(listener, place, place.removedReplica);
     }
+    //handle already existing replica:
+    else {
+            issueCreate(listener, place, place.replica);
+        }
 }
 
 function forget(place, listener, path) {
@@ -244,41 +239,59 @@ function replicate(place, value) {
     //handle REMOVE:
     if (value === undefined) {
         if (place.replica !== undefined) {
-            onRemove(place, place.replica);
+            place.removedReplica = place.replica;
+            delete place.replica;
+            onRemove(place, place.removedReplica);
 
             for (var i = 0; i < place.children.length; ++i) {
                 var child = place.children[i];
                 child.replicate(undefined);
             }
-
-            place.removedReplica = place.replica;
-
-            delete place.replica;
         }
     }
     //handle CREATE/CHANGE:
     else {
-            if (place.replica === undefined) {
+            var old = place.replica;
+            place.replica = value;
+
+            if (old === undefined) {
                 onCreate(place, value);
             }
             //equality determination policy for objects wasn't established yet, but let's put responsibility to handle object's changes to nested Places:
             //be careful with null values (since those are 'object's) - don't let them sneak into model and/or server-side:
-            else if ((typeof value === 'undefined' ? 'undefined' : _typeof(value)) !== 'object' || _typeof(place.replica) !== 'object') {
-                    if (value !== place.replica) {
-                        onChange(place, place.replica, value);
+            else if ((typeof value === 'undefined' ? 'undefined' : _typeof(value)) !== 'object' || (typeof old === 'undefined' ? 'undefined' : _typeof(old)) !== 'object') {
+                    if (value !== old) {
+                        onChange(place, value, old);
                     }
                 }
             //otherwise both are objects - won't change ...
 
             //we don't care about model's fields which has no attached Places against them:
-            for (var i = 0; i < place.children.length; ++i) {
-                var child = place.children[i];
+            var _iteratorNormalCompletion2 = true;
+            var _didIteratorError2 = false;
+            var _iteratorError2 = undefined;
 
-                //I suppose we shouldn't care if replicating value isn't of Object type since [] operator should just return undefined (is what we need) in that case:
-                child.replicate(value[child.name]);
+            try {
+                for (var _iterator2 = place.children[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                    var _child = _step2.value;
+
+                    //I suppose we shouldn't care if replicating value isn't of Object type since [] operator should just return undefined (is what we need) in that case:
+                    _child.replicate(value[_child.name]);
+                }
+            } catch (err) {
+                _didIteratorError2 = true;
+                _iteratorError2 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                        _iterator2.return();
+                    }
+                } finally {
+                    if (_didIteratorError2) {
+                        throw _iteratorError2;
+                    }
+                }
             }
-
-            place.replica = value;
         }
 
     place.busy = false;
@@ -315,29 +328,105 @@ function handlePostpones(place) {
     place.postponedCommands.length = 0;
 }
 
+function issueCreate(listener, place, created) {
+    if (listener.create === true) {
+        if (isFunction(listener.change)) {
+            listener.change(created, undefined, place);
+        }
+    } else if (isFunction(listener.create)) {
+        listener.create(created, place);
+    }
+}
+
 function onCreate(place, created) {
-    for (var i in place.listeners) {
-        var listener = place.listeners[i];
-        if (isFunction(listener.create)) {
-            listener.create(created, place);
+    var _iteratorNormalCompletion3 = true;
+    var _didIteratorError3 = false;
+    var _iteratorError3 = undefined;
+
+    try {
+        for (var _iterator3 = place.listeners[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+            var listener = _step3.value;
+
+            issueCreate(listener, place, created);
+        }
+    } catch (err) {
+        _didIteratorError3 = true;
+        _iteratorError3 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                _iterator3.return();
+            }
+        } finally {
+            if (_didIteratorError3) {
+                throw _iteratorError3;
+            }
         }
     }
 }
 
-function onChange(place, before, after) {
-    for (var i in place.listeners) {
-        var listener = place.listeners[i];
-        if (isFunction(listener.change)) {
-            listener.change(before, after, place);
+function onChange(place, after, before) {
+    var _iteratorNormalCompletion4 = true;
+    var _didIteratorError4 = false;
+    var _iteratorError4 = undefined;
+
+    try {
+        for (var _iterator4 = place.listeners[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+            var listener = _step4.value;
+
+            if (listener.change === true) {
+                if (isFunction(listener.create)) {
+                    listener.create(after, place);
+                }
+            } else if (isFunction(listener.change)) {
+                listener.change(after, before, place);
+            }
         }
+    } catch (err) {
+        _didIteratorError4 = true;
+        _iteratorError4 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion4 && _iterator4.return) {
+                _iterator4.return();
+            }
+        } finally {
+            if (_didIteratorError4) {
+                throw _iteratorError4;
+            }
+        }
+    }
+}
+
+function issueRemove(listener, place, old) {
+    if (isFunction(listener.remove)) {
+        listener.remove(old, place);
     }
 }
 
 function onRemove(place, old) {
-    for (var i in place.listeners) {
-        var listener = place.listeners[i];
-        if (isFunction(listener.remove)) {
-            listener.remove(old, place);
+    var _iteratorNormalCompletion5 = true;
+    var _didIteratorError5 = false;
+    var _iteratorError5 = undefined;
+
+    try {
+        for (var _iterator5 = place.listeners[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+            var listener = _step5.value;
+
+            issueRemove(listener, place, old);
+        }
+    } catch (err) {
+        _didIteratorError5 = true;
+        _iteratorError5 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                _iterator5.return();
+            }
+        } finally {
+            if (_didIteratorError5) {
+                throw _iteratorError5;
+            }
         }
     }
 }
