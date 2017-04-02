@@ -272,7 +272,8 @@ function replicate(
         {
             onCreate( place, value )
         }
-        //equality determination policy for objects wasn't established yet, but let's put responsibility to handle object's changes to nested Places:
+        //okey, let application choose what change is, since arrays are also objects:
+        /*//equality determination policy for objects wasn't established yet, but let's put responsibility to handle object's changes to nested Places:
         //be careful with null values (since those are 'object's) - don't let them sneak into model and/or server-side:
         else if ( typeof value !== 'object' || typeof old !== 'object' )
         {
@@ -281,7 +282,11 @@ function replicate(
                 onChange( place, value, old )
             }
         }
-        //otherwise both are objects - won't change ...
+        //otherwise both are objects - won't change ...*/
+        else if ( value != old )
+        {
+            onChange( place, value, old )
+        }
         
         //we don't care about model's fields which has no attached Places against them:
         for ( let child of place.children )
