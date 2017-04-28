@@ -152,6 +152,23 @@ var Place = function () {
             });
         }
 
+        /** Creates Rx.Observable as if it is a listener to both create and change.
+        TODO: redesign the whole Place so that notifications are not based on Listeners, but directly on Observables.
+        */
+
+    }, {
+        key: 'from',
+        value: function from(path) {
+            var result = new Rx.ReplaySubject(1);
+            this.listen({
+                create: true,
+                change: function change(after, before) {
+                    result.next(after);
+                }
+            });
+            return result;
+        }
+
         /** Server-side model's name.*/
 
         /** Fields.*/
