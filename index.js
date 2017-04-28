@@ -140,7 +140,7 @@ export default class Place
         )
     }
     
-    /** Creates Rx.Observable as if it is a listener to both create and change.
+    /** Creates Rx.Observable as if it is a listener to all the events: create, change and remove.
     TODO: redesign the whole Place so that notifications are not based on Listeners, but directly on Observables.
     */
     from(
@@ -153,6 +153,10 @@ export default class Place
             change : function( after, before )
             {
                 result.next( after )
+            },
+            remove : function()
+            {
+                result.next( undefined )
             }
         } )
         return result

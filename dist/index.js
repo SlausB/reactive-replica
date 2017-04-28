@@ -152,7 +152,7 @@ var Place = function () {
             });
         }
 
-        /** Creates Rx.Observable as if it is a listener to both create and change.
+        /** Creates Rx.Observable as if it is a listener to all the events: create, change and remove.
         TODO: redesign the whole Place so that notifications are not based on Listeners, but directly on Observables.
         */
 
@@ -164,6 +164,9 @@ var Place = function () {
                 create: true,
                 change: function change(after, before) {
                     result.next(after);
+                },
+                remove: function remove() {
+                    result.next(undefined);
                 }
             });
             return result;
