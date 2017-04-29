@@ -148,17 +148,20 @@ export default class Place
     )
     {
         let result = new Rx.ReplaySubject( 1 )
-        this.listen( {
-            create : true,
-            change : function( after, before )
+        this.listen(
             {
-                result.next( after )
+                create : true,
+                change : function( after, before )
+                {
+                    result.next( after )
+                },
+                remove : function()
+                {
+                    result.next( undefined )
+                }
             },
-            remove : function()
-            {
-                result.next( undefined )
-            }
-        } )
+            path
+        )
         return result
     }
     

@@ -168,7 +168,7 @@ var Place = function () {
                 remove: function remove() {
                     result.next(undefined);
                 }
-            });
+            }, path);
             return result;
         }
 
